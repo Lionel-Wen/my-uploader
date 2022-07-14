@@ -1,6 +1,11 @@
 
 // 导入公共方法
-import {delay,writeFile,multipartry_load,merge,exists} from '../util/uploadTool'
+import {
+    delay,
+    writeFile,
+    multipartry_load,
+    merge,exists
+} from '../util/uploadTool'
 var express = require('express');
 var router = express.Router();
 const fs = require('fs');
@@ -9,7 +14,7 @@ const bodyParser = require('body-parser');
 const SparkMD5 = require('spark-md5');
 const path = require('path');
 const HOST = 'http://127.0.0.1';
-const FONTHOSTNAME = `${HOST}:${8000}`; // 前端起的服务
+const FONTHOSTNAME = `${HOST}:${8888}`; // 前端起的服务
 
 
 
@@ -25,9 +30,7 @@ router.use(function timeLog(req, res, next) {
 
 router.post('/upload_single', async (req, res) => {
     try {
-        console.log('Time22: ', Date.now());
         let { files, fields } = await multipartry_load(req, true);
-        console.log('Time33: ', Date.now());
         let file = (files.file && files.file[0]) || {};
         res.send({
             code: 0,
@@ -43,5 +46,58 @@ router.post('/upload_single', async (req, res) => {
     }
 });
 
-// module.exports =  router;
+router.post('/upload_single_base64', async (req, res) => {
+    let file = req.body.file;
+    let filename = req.body.filename;
+    let spark = new SparkMD5.ArrayBuffer(); // 根据文件内容,生成一个hash名字
+    let suffix = /\.([0-9a-zA-Z]+)$/.exec(filename)[1];
+    let isExists = false;
+    let path;
+    file = decodeURIComponent(file);
+    file = file.replace(/^data:image\/\w+;base64,/, '');
+    file = Buffer.from(file, 'base64'); // 将base64转成正常的文件格式
+    spark.append(file);
+    path = `${uploadDir}/${spark.end()}.${suffix}`;
+    await delay();
+    // 检测是否存在
+    isExists = await exists(path);
+    if (isExists) {
+        res.send({
+            code: 0,
+            codeText: 'file is exists',
+            urlname: filename,
+            url: path.replace(baseDir, FONTHOSTNAME),
+        });
+        return;
+    }
+    // fs.writeFile(res)
+    writeFile(res, path, file, filename, false);
+});
+
+
+router.post('/upload_single_name', async (req, res) => {
+    try {
+        const { fields, files } = await multipartry_load(req);
+        const file = (files.file && files.file[0]) || {};
+        const filename = (fields.filename && fields.filename[0]) || '';
+        const path = `${uploadDir}/${filename}`;
+        let isExists = false;
+        isExists = await exists(path);
+        if (isExists) {
+            res.send({
+                code: 0,
+                codeText: 'file is exists',
+                url: path.replace(baseDir, FONTHOSTNAME),
+            });
+            return;
+        }
+        writeFile(res, path, file, filename, true);
+    } catch (e) {
+        res.send({
+            code: 1,
+            codeText: e,
+        });
+    }
+});
+
 export default router;

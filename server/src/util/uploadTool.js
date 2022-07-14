@@ -11,9 +11,10 @@ const delay = function (interval) {
 };
 
 // 基于multiparty插件实现文件上传处理 & form-data解析
-const uploadDir = `${__dirname}/upload`;
-const baseDir = path.resolve(__dirname, '../');
+const uploadDir = path.resolve(__dirname, '../../upload');
+const baseDir = path.resolve(__dirname, '../../../');
 const multipartry_load = function (req, auto) {
+    console.log({uploadDir,baseDir});
     typeof auto !== 'boolean' ? (auto = false) : null;
     let config = {
         maxFieldsSize: 200 * 1024 * 1024,
@@ -79,7 +80,7 @@ const merge = (HASH, count) => {
         let suffix
         let isExists = await exists(path); // 判断文件是否存在
         if(!isExists) {
-            rject('HASH path  is not found!')
+            reject('HASH path  is not found!')
             return
         }
         fileList = fs.readdirSync(path);
