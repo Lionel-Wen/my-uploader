@@ -211,10 +211,10 @@ function App() {
     const handeSend2 = async () => {
         if (!_file2) return alert('请选择图片');
         // 将文件传给服务器 FormData / base64
-        console.log({_file2});
+        console.log("file2",_file2[0]);
         // 生成文件buffer名字
         const { filename } = await changeBuffer(_file2[0]);
-
+        
         let formData = new FormData();
         formData.append('filename', filename); // 处理名字,服务端不提供名字编译
         instance

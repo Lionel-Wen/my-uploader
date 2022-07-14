@@ -15,8 +15,11 @@ const SparkMD5 = require('spark-md5');
 const path = require('path');
 const HOST = 'http://127.0.0.1';
 const FONTHOSTNAME = `${HOST}:${8888}`; // 前端起的服务
-
-
+const uploadDir = path.resolve(__dirname, '../../upload');
+const baseDir = path.resolve(__dirname, '../../../');
+// const uploadDir = `${__dirname}/upload`;
+// const baseDir = path.resolve(__dirname, '../../../');
+console.log(uploadDir,baseDir)
 
 // 该路由使用的中间件
 router.use(function timeLog(req, res, next) {
