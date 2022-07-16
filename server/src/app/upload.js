@@ -122,4 +122,22 @@ router.post('/upload_single_name', async (req, res) => {
     }
 });
 
+router.post('/upload_single', async (req, res) => {
+    try {
+        let { files, fields } = await multipartry_load(req, true);
+        let file = (files.file && files.file[0]) || {};
+        res.send({
+            code: 0,
+            codeText: '上传成功',
+            originFilename: file.originFilename,
+            url: file.path.replace(baseDir, FONTHOSTNAME),
+        });
+    } catch (err) {
+        res.send({
+            code: 1,
+            codeText: err,
+        });
+    }
+});
+
 export default router;
