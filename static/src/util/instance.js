@@ -13,9 +13,12 @@ instance.defaults.headers['Content-Type'] = 'multipart/form-data'
 instance.defaults.transformRequest = (data, headers) => {
     const contentType = headers['Content-Type']
     if (contentType === 'application/x-www-form-urlencoded') {
-        return qs.stringify(data) // 传递参数格式
+        console.log({data});
+        const newData =  qs.stringify(data) // 传递参数格式
+        console.log({newData});
+        return newData;
     }
-    return data    
+    return data;
 }
 
 instance.interceptors.response.use(response => {

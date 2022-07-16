@@ -71,7 +71,7 @@ function App() {
     }
     console.log({formData})
     instance
-    .post('/upload_single', formData)
+    .post('/upload/upload_single', formData)
     .then((res) => {
         const { code } = res;
         if (code === 0) {
@@ -123,10 +123,10 @@ function App() {
         // 将上传的文件转成base64
         base64 = await changeBase64(file);
         upload_ipt2.current.value = '';
-        console.log(base64);
+        console.log({base64});
         try {
             const data = await instance.post(
-                '/upload_single_base64',
+                '/upload/upload_single_base64',
                 {
                     file: encodeURIComponent(base64), // 防止乱码问题
                     filename: file.name,
@@ -218,7 +218,7 @@ function App() {
         let formData = new FormData();
         formData.append('filename', filename); // 处理名字,服务端不提供名字编译
         instance
-            .post('/upload_single_name', formData)
+            .post('/upload/upload_single_name', formData)
             .then((res) => {
                 const { code } = res;
                 if (code === 0) {
@@ -232,8 +232,28 @@ function App() {
                 console.log(e);
             });
     }
+
+    const handleDown = () => {
+        console.log(111111111)
+        instance
+        .post('/download/file', "hello")
+        .then((res) => {
+            const { code } = res;
+            if (code === 0) {
+                console.log(res.codeText)
+            }
+            console.log(res);
+            return Promise.reject(res.codeText);
+        })
+        .catch((e) => {
+            console.log(e);
+        });    
+    }
   return (
     <div className="container">
+      <div className="item">
+        <button onClick={()=>{handleDown()}}>测试download接口</button>
+      </div> 
       <div className="item">
         <div className="title">单一文件上传FORM_DATA</div>
         <section id="upload1">

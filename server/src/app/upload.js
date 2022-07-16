@@ -4,14 +4,15 @@ import {
     delay,
     writeFile,
     multipartry_load,
-    merge,exists
+    merge,
+    exists
 } from '../util/uploadTool'
 var express = require('express');
 var router = express.Router();
-const fs = require('fs');
-const bodyParser = require('body-parser');
 
-const SparkMD5 = require('spark-md5');
+const bodyParser = require('body-parser');
+import SparkMD5 from 'spark-md5';
+// const SparkMD5 = require('spark-md5');
 const path = require('path');
 const HOST = 'http://127.0.0.1';
 const FONTHOSTNAME = `${HOST}:${8888}`; // 前端起的服务
@@ -20,18 +21,32 @@ const baseDir = path.resolve(__dirname, '../../../');
 // const uploadDir = `${__dirname}/upload`;
 // const baseDir = path.resolve(__dirname, '../../../');
 console.log(uploadDir,baseDir)
-
 // 该路由使用的中间件
-router.use(function timeLog(req, res, next) {
-  console.log(`req.url:${req.url}`);
-  bodyParser.urlencoded({
-    extended: false,
-    limit: '1024mb',
-  })
-  next();
+
+// router.use(
+//     bodyParser.urlencoded({
+//         extended: false,
+//         limit: '1024mb',
+//     })
+// );
+
+router.use(function timeLog(req, res, next) { 
+    // bodyParser.urlencoded({
+    //   extended: false,
+    //   limit: '1024mb',
+    // })
+    // console.log(`req.url:${req.body}`);
+    next();
 });
 
+// router.use(
+//     bodyParser.urlencoded({
+//     extended: false,
+//     limit: '1024mb',
+//   }));
+
 router.post('/upload_single', async (req, res) => {
+    console.log('-------------------upload_single')
     try {
         let { files, fields } = await multipartry_load(req, true);
         let file = (files.file && files.file[0]) || {};
@@ -50,8 +65,10 @@ router.post('/upload_single', async (req, res) => {
 });
 
 router.post('/upload_single_base64', async (req, res) => {
+    // console.log("-----------------------",req.body.filename)
     let file = req.body.file;
     let filename = req.body.filename;
+    // console.log({file,filename});
     let spark = new SparkMD5.ArrayBuffer(); // 根据文件内容,生成一个hash名字
     let suffix = /\.([0-9a-zA-Z]+)$/.exec(filename)[1];
     let isExists = false;
@@ -59,8 +76,10 @@ router.post('/upload_single_base64', async (req, res) => {
     file = decodeURIComponent(file);
     file = file.replace(/^data:image\/\w+;base64,/, '');
     file = Buffer.from(file, 'base64'); // 将base64转成正常的文件格式
+    console.log({file});
     spark.append(file);
     path = `${uploadDir}/${spark.end()}.${suffix}`;
+    console.log({path})
     await delay();
     // 检测是否存在
     isExists = await exists(path);

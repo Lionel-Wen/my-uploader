@@ -1,5 +1,8 @@
 const path = require('path');
 const multipartry = require('multiparty');
+const fs = require('fs');
+const HOST = 'http://127.0.0.1';
+const FONTHOSTNAME = `${HOST}:${8888}`; // 前端起的服务
 // 延迟函数
 const delay = function (interval) {
     typeof interval !== 'number' ? interval === 1000 : interval;
