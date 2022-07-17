@@ -20,7 +20,7 @@ const multipartry_load = function (req, auto) {
     console.log({uploadDir,baseDir});
     typeof auto !== 'boolean' ? (auto = false) : null;
     let config = {
-        maxFieldsSize: 200 * 1024 * 1024,
+        maxFieldsSize: 300 * 1024 * 1024,
     };
     if (auto) config.uploadDir = uploadDir;
     return new Promise(async (resolve, reject) => {
@@ -52,14 +52,15 @@ const exists = function (path) {
 
 // 创建文件并写入到指定的目录 & 返回客户端结果
 const writeFile = function (res, path, file, filename, stream) {
+    console.log({
+        path,
+        file
+    })
     return new Promise((resolve, reject) => {
         if (stream) {
+            let fileData =  fs.readFileSync(file.path);
+            file = fileData;
         }
-        console.log("fs.writeFile");
-        console.log({
-            path,
-            file
-        })
         fs.writeFile(path, file, (err) => {
             if (err) {
                 reject(err);

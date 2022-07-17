@@ -114,7 +114,7 @@ router.post('/upload_single_name', async (req, res) => {
             });
             return;
         }
-        writeFile(res, path, file.path, filename, true);
+        writeFile(res, path, file, filename, true);
     } catch (e) {
         res.send({
             code: 1,
@@ -169,7 +169,7 @@ router.post('/upload_single', async (req, res) => {
             return;
         }
         console.log("writeFile");
-        writeFile(res, path, file.path, filename, true);
+        writeFile(res, path, file, filename, true);
     } catch (e) {
         res.send({
             code: 1,
