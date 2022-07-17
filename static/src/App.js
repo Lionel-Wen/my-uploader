@@ -11,7 +11,13 @@ function App() {
   const upload_input5 = useRef();
   const upload_list = useRef();
   const upload_ipt6 = useRef();
-  const dragBox = useRef();
+  const [maxFile,setMaxFile] = useState({
+    file:null,
+    progress:0})
+//   const dragBox = useRef();
+  const [dragFile,setDragFile] = useState({
+    styleBorder:'',
+  })
   const [upload_tip,setTip] = useState("block");
   // const [upload_list,setFileList] = useState("none")
   const [_file,setFile] = useState([]);
@@ -443,25 +449,34 @@ function App() {
 
     const handleDragEnter = (e) => {
       console.log(e);
+      console.log(1111);
       e.preventDefault();
+      setDragFile({
+        styleBorder:'1px solid red'
+      })
     }
 
     const handeChange6 = (e) => {
         const { files } = e.target;
         const file = files[0];
-        _file = file;
+        console.log({file})
+        setMaxFile({
+            ...maxFile,
+            file
+        })
+        // _file = file;
     }
 
     const handSend5 = async () => {
         // 点击开始上传
         let chunkList = [];
         let alreadyChunkList = [];
-        console.log(_file);
+        console.log("maxFile.file",maxFile.file);
         let maxSize = 1024 * 1024;
-        let maxCount = Math.ceil(_file.size / maxSize); // 最大允许分割的切片数量为30
+        let maxCount = Math.ceil(maxFile.file.size / maxSize); // 最大允许分割的切片数量为30
         let index = 0;
-        if (!_file) return alert('请先选择图片');
-        const { HASH, suffix } = await changeBuffer(_file);
+        if (!maxFile.file) return alert('请先选择图片');
+        const { HASH, suffix } = await changeBuffer(maxFile.file);
         // 判断当前文件可以切出多少切片
         if (maxCount > 10) {
             // 如果切片数量大于最大值
@@ -472,7 +487,7 @@ function App() {
         console.log(maxSize, 'maxSize');
         while (index < maxCount) {
             chunkList.push({
-                file: _file.slice(index * maxSize, (index + 1) * maxSize),
+                file: maxFile.file.slice(index * maxSize, (index + 1) * maxSize),
                 filename: `${HASH}_${index + 1}.${suffix}`,
             });
             index++;
@@ -480,7 +495,7 @@ function App() {
 
         // 先获取已经上传的切片
         const data = await instance.post(
-            '/upload_already',
+            '/upload/upload_already',
             {
                 HASH: HASH,
             },
@@ -494,6 +509,10 @@ function App() {
         const complate = async () => {
             index++;
             let progress = `(${index}/${maxCount})%` // 进度条
+            setMaxFile({
+                ...maxFile,
+                progress
+            })
             if (index >= maxCount) {
                 console.log('ok, 切片完成')
             }
@@ -515,7 +534,7 @@ function App() {
             fm.append('filename', item.filename);
             return new Promise((sovle) => {
                 instance
-                    .post('/upload_chunk', fm)
+                    .post('/upload/upload_chunk', fm)
                     .then(() => {
                         complate()
                         sovle();
@@ -528,7 +547,7 @@ function App() {
         Promise.all(chunkList).then(() => {
             instance
                 .post(
-                    '/upload_merge',
+                    '/upload/upload_merge',
                     {
                         HASH: HASH,
                         count: maxCount,
@@ -707,13 +726,23 @@ function App() {
       </div>
 
       <div className="item" id="dragBox"
-         onDragEnter = {handleDragEnter}
-         onDragLeave = {(e)=>{
-            console.log(2222)
+         style={{
+            border : dragFile.styleBorder,
          }}
+
+         onDragOver = {(e)=>{
+            console.log(2222)
+            e.preventDefault();
+         }}
+         onDragEnter = {handleDragEnter}
+        //  onDragLeave = {(e)=>{
+        //     console.log(2222)
+        //  }}
          onDrop = {(e)=>{
             e.preventDefault();
-            // this.style.border = '';
+            setDragFile({
+                styleBorder:''
+              })
             const {
                 dataTransfer: { files },
             } = e;
@@ -759,7 +788,11 @@ function App() {
                   <button className="upload_button upload" onClick={handSend5}>开始上传</button>
               </div>
               <div className="upload_progress">
-                  <div className="progress"></div>
+                  <div className="progress"
+                  style={{
+                    width:`${maxFile.progress}%`
+                  }}>
+                  </div>
               </div>
           </section>
       </div>

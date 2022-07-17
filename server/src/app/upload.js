@@ -140,4 +140,83 @@ router.post('/upload_single', async (req, res) => {
     }
 });
 
+
+/**
+ * 上传切片
+ */
+ router.post('/upload_chunk', async (req, res) => {
+    try {
+        const { fields, files } = await multipartry_load(req);
+        const file = (files.file && files.file[0]) || {};
+        const filename = (fields.filename && fields.filename[0]) || '';
+        // const path = `${uploadDir}/${filename}`
+        let isExists = false;
+        // 创建存放切片的临时目录
+        const [, HASH] = /^([^_]+)_(\d+)/.exec(filename);
+        let path = `${uploadDir}/${HASH}`; // 用hash生成一个临时文件夹
+        !fs.existsSync(path) ? fs.mkdirSync(path) : null; // 判断该文件夹是否存在，不存在的话，新建一个文件夹
+        path = `${uploadDir}/${HASH}/${filename}`; // 将切片存到临时目录中
+        isExists = await exists(path);
+        if (isExists) {
+            res.send({
+                code: 0,
+                codeText: 'file is already exists',
+                url: path.replace(FONTHOSTNAME, HOSTNAME),
+            });
+            return;
+        }
+        writeFile(res, path, file, filename, true);
+    } catch (e) {
+        res.send({
+            code: 1,
+            codeText: e,
+        });
+    }
+});
+
+/**
+ * 合并切片
+ */
+ router.post('/upload_merge', async (req, res) => {
+    const { HASH, count } = req.body;
+    try {
+        const { filname, path } = await merge(HASH, count);
+        res.send({
+            code: 0,
+            codeText: 'merge sucessfully',
+            url: path.replace(baseDir, FONTHOSTNAME),
+        });
+    } catch (e) {
+        res.send({
+            code: 1,
+            codeText: e,
+        });
+    }
+});
+
+
+router.post('/upload_already', async (req, res) => {
+    let { HASH } = req.body
+    let path = `${uploadDir}/${HASH}`
+    let fileList = []
+    try {
+        fileList = fs.readdirSync(path)
+        fileList = fileList.sort((a, b) => {
+            let reg = /_(\d+)/;
+            return reg.exec(a)[1] - reg.exec(b)[1]
+        })
+        res.send({
+            code: 0,
+            codeText: '',
+            fileList
+        })
+    } catch (e) {
+        res.send({
+            code: 1,
+            codeText: e,
+            fileList: []
+        })
+    }
+})
+
 export default router;
