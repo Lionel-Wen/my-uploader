@@ -9,7 +9,7 @@ import {
 } from '../util/uploadTool'
 var express = require('express');
 var router = express.Router();
-
+const fs = require('fs');
 const bodyParser = require('body-parser');
 import SparkMD5 from 'spark-md5';
 // const SparkMD5 = require('spark-md5');
@@ -103,6 +103,7 @@ router.post('/upload_single_name', async (req, res) => {
         const file = (files.file && files.file[0]) || {};
         const filename = (fields.filename && fields.filename[0]) || '';
         const path = `${uploadDir}/${filename}`;
+        console.log({fields,files,file,filename,path})
         let isExists = false;
         isExists = await exists(path);
         if (isExists) {
@@ -113,7 +114,7 @@ router.post('/upload_single_name', async (req, res) => {
             });
             return;
         }
-        writeFile(res, path, file, filename, true);
+        writeFile(res, path, file.path, filename, true);
     } catch (e) {
         res.send({
             code: 1,
@@ -145,27 +146,30 @@ router.post('/upload_single', async (req, res) => {
  * 上传切片
  */
  router.post('/upload_chunk', async (req, res) => {
+    console.log("/upload_chunk");
     try {
         const { fields, files } = await multipartry_load(req);
         const file = (files.file && files.file[0]) || {};
         const filename = (fields.filename && fields.filename[0]) || '';
-        // const path = `${uploadDir}/${filename}`
+        let path = ''
         let isExists = false;
         // 创建存放切片的临时目录
         const [, HASH] = /^([^_]+)_(\d+)/.exec(filename);
-        let path = `${uploadDir}/${HASH}`; // 用hash生成一个临时文件夹
+        path = `${uploadDir}/${HASH}`; // 用hash生成一个临时文件夹
         !fs.existsSync(path) ? fs.mkdirSync(path) : null; // 判断该文件夹是否存在，不存在的话，新建一个文件夹
         path = `${uploadDir}/${HASH}/${filename}`; // 将切片存到临时目录中
+        console.log("chunkpath",path)
         isExists = await exists(path);
         if (isExists) {
             res.send({
                 code: 0,
                 codeText: 'file is already exists',
-                url: path.replace(FONTHOSTNAME, HOSTNAME),
+                url: path.replace(__dirname, FONTHOSTNAME),
             });
             return;
         }
-        writeFile(res, path, file, filename, true);
+        console.log("writeFile");
+        writeFile(res, path, file.path, filename, true);
     } catch (e) {
         res.send({
             code: 1,
@@ -196,11 +200,16 @@ router.post('/upload_single', async (req, res) => {
 
 
 router.post('/upload_already', async (req, res) => {
-    let { HASH } = req.body
-    let path = `${uploadDir}/${HASH}`
-    let fileList = []
+    let { HASH } = req.body;
+    let path = `${uploadDir}/${HASH}`;
+    let fileList = [];
+    // 如果没有文件夹创建文件夹
+    !fs.existsSync(path) ? fs.mkdirSync(path) : null;
+    console.log({HASH,path,fileList})
     try {
-        fileList = fs.readdirSync(path)
+        console.log("try")
+        fileList = fs.readdirSync(path);
+        console.log(233333333333)
         fileList = fileList.sort((a, b) => {
             let reg = /_(\d+)/;
             return reg.exec(a)[1] - reg.exec(b)[1]
@@ -211,10 +220,11 @@ router.post('/upload_already', async (req, res) => {
             fileList
         })
     } catch (e) {
+        console.log({e})
         res.send({
             code: 1,
             codeText: e,
-            fileList: []
+            fileList
         })
     }
 })

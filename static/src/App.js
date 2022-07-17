@@ -242,12 +242,13 @@ function App() {
         const { filename } = await changeBuffer(_file2[0]);
         
         let formData = new FormData();
+        formData.append('file', _file2[0]); // 处理名字,服务端不提供名字编译
         formData.append('filename', filename); // 处理名字,服务端不提供名字编译
         instance
             .post('/upload/upload_single_name', formData)
             .then((res) => {
                 const { code } = res;
-                if (code === 0) {
+                if (+code === 0) {
                     alert('file 上传成功');
                     return;
                 }
@@ -475,12 +476,25 @@ function App() {
         let maxSize = 1024 * 1024;
         let maxCount = Math.ceil(maxFile.file.size / maxSize); // 最大允许分割的切片数量为30
         let index = 0;
-        if (!maxFile.file) return alert('请先选择图片');
+        if (!maxFile.file) return alert('请先文件');
         const { HASH, suffix } = await changeBuffer(maxFile.file);
+                // 先获取已经上传的切片
+        const data = await instance.post(
+                    '/upload/upload_already',
+                    {
+                        HASH: HASH,
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                    }
+        );
+        console.log({data});
         // 判断当前文件可以切出多少切片
         if (maxCount > 10) {
             // 如果切片数量大于最大值
-            maxSize = _file.size / 10; // 则改变切片大小
+            maxSize = maxFile.file.size / 10; // 则改变切片大小
             maxCount = 10;
         }
         console.log(maxCount, 'maxCount');
@@ -492,75 +506,70 @@ function App() {
             });
             index++;
         }
-
-        // 先获取已经上传的切片
-        const data = await instance.post(
-            '/upload/upload_already',
-            {
-                HASH: HASH,
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-            }
-        );
         index = 0
+
         const complate = async () => {
             index++;
-            let progress = `(${index}/${maxCount})%` // 进度条
+            let progress = `(${index}/${maxCount}*100)%` // 进度条
             setMaxFile({
                 ...maxFile,
                 progress
             })
+            console.log({index})
             if (index >= maxCount) {
-                console.log('ok, 切片完成')
+                console.log('ok, 切片完成');
+                try {
+                  const res =  await instance.post('/upload/upload_merge',
+                              {
+                                  HASH: HASH,
+                                  count: maxCount,
+                              },
+                              {
+                                  headers: {
+                                      'Content-Type': 'application/x-www-form-urlencoded',
+                                  },
+                              }
+                    )
+                    if (+res.code === 0) {
+                        console.log(`你可以通过改路径${res.url}访问文件`);
+                    } else {
+                        alert("合并切片失败");
+                        clear()
+                    }
+                } catch(err) {
+                    console.log({err})
+                }
             }
+        }
+
+        const clear = () => {
+
         }
 
         const { fileList } = data;
         alreadyChunkList = fileList
         console.log(chunkList, 'chunkList');
-        chunkList = chunkList.map((item) => {
+        chunkList.forEach(item => {
+            // 已经上传了无需上传
             if (alreadyChunkList.length > 0 && alreadyChunkList.includes(item.filename)) {
-                debugger
                 // 表示切片已经存在
                 complate()
                 return;
             }
-
-            const fm = new FormData();
+            let fm = new FormData();
             fm.append('file', item.file);
             fm.append('filename', item.filename);
-            return new Promise((sovle) => {
+            // return new Promise((sovle) => {
                 instance
                     .post('/upload/upload_chunk', fm)
-                    .then(() => {
-                        complate()
-                        sovle();
+                    .then((res) => {
+                        if (+res.code === 0) {
+                            complate()
+                        }
                     })
                     .catch(() => {
-                        //
+                        console.log("当前切片上传失败")
                     });
-            });
-        });
-        Promise.all(chunkList).then(() => {
-            instance
-                .post(
-                    '/upload/upload_merge',
-                    {
-                        HASH: HASH,
-                        count: maxCount,
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                    }
-                )
-                .then((res) => {
-                    console.log('ok');
-                });
         });
     }
 

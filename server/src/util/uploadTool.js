@@ -55,6 +55,11 @@ const writeFile = function (res, path, file, filename, stream) {
     return new Promise((resolve, reject) => {
         if (stream) {
         }
+        console.log("fs.writeFile");
+        console.log({
+            path,
+            file
+        })
         fs.writeFile(path, file, (err) => {
             if (err) {
                 reject(err);
